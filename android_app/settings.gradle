@@ -16,5 +16,8 @@ dependencyResolutionManagement {
 rootProject.name = "Convoscope"
 include ':app'
 
+include ':tap-android-sdk'
+project(':tap-android-sdk').projectDir = new File(rootProject.projectDir, '../tap-android-sdk/tap-android-sdk')
+
 include ':SmartGlassesManager'
 project(':SmartGlassesManager').projectDir = new File(rootProject.projectDir, '../SmartGlassesManager/SGM_android/SmartGlassesManager')

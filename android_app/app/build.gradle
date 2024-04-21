@@ -103,4 +103,7 @@ dependencies {
 
     //websocket for deepgram
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
+    //TAP XR SDK
+    implementation project(':tap-android-sdk')
 }

@@ -4,3 +4,6 @@
 [submodule "server/word_frequency_lists"]
 	path = server/word_frequency_lists
 	url = git@github.com:hermitdave/FrequencyWords.git
+[submodule "tap-android-sdk"]
+	path = tap-android-sdk
+	url = git@github.com:TapWithUs/tap-android-sdk.git
