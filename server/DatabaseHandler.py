@@ -160,6 +160,9 @@ class DatabaseHandler:
                  "settings": {
                      "enable_agent_proactive_definer_images": True,
                      "should_update_settings": False,
+                     "should_run_single_shot_translate": False,
+                     "translation_ratio": 6,
+                     "translate_mode": False,
                      "target_language": "Russian",
                      "source_language": "English",
                      "transcribe_language": "English",
@@ -247,6 +250,34 @@ class DatabaseHandler:
             print(f'Setting "{setting_key}" updated for user {user_id}.')
         else:
             print(f'No updates made for user {user_id}. Either user does not exist or no changes were necessary.')
+
+
+    def change_translation_ratio(self, user_id, increase):
+        curr_value = self.get_user_settings_value(user_id, "translation_ratio")
+        if curr_value is not None:
+            if increase and curr_value > 2:
+                new_value = curr_value - 1  # Decrement if increase is True and current value is greater than 2
+            elif not increase and curr_value < 12:
+                new_value = curr_value + 1  # Increment if increase is False and current value is less than 12
+            else:
+                # If no changes are needed because it's already at the boundary value
+                print(f"Translation ratio already at the boundary value of {curr_value}. No changes made.")
+                return
+            self.update_single_user_setting(user_id, "translation_ratio", new_value)
+        else:
+            print("Translation ratio setting not found.")
+
+
+    def toggle_translate_mode(self, user_id):
+        curr_value = self.get_user_settings_value(user_id, "translate_mode")
+        if curr_value is not None:
+            new_value = not curr_value  # Toggle the current value
+            self.update_single_user_setting(user_id, "translate_mode", new_value)
+            print(f"Translate mode toggled to {'enabled' if new_value else 'disabled'} for user {user_id}.")
+        else:
+            # If the translate_mode setting is not found, assume it should be enabled by default
+            self.update_single_user_setting(user_id, "translate_mode", True)
+            print(f"Translate mode setting not found. Defaulted and set to enabled for user {user_id}.")
 
 
     def get_user_settings_value(self, user_id, option_key):

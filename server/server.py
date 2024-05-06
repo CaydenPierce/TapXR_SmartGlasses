@@ -190,6 +190,17 @@ async def button_handler(request):
 
     if button_activity:  # True if push down, false if button release
         print("button True")
+
+        # Tell the language learning system to do a translate
+        if button_num == 2:
+            db_handler.update_single_user_setting(user_id, "should_run_single_shot_translate", True)
+        elif button_num == 1:  # Switch mode from explicit and proactive modes
+            db_handler.toggle_translate_mode(user_id)
+        elif button_num == 4:  # Middle finger, decrease frequency of proactive
+            db_handler.change_translation_ratio(user_id, False)
+        elif button_num == 8:  # Ring finger, increase frequency of proactive
+            db_handler.change_translation_ratio(user_id, True)
+
         return web.Response(text=json.dumps({'message': "button up activity detected"}), status=200)
     else:
         return web.Response(text=json.dumps({'message': "button up activity detected"}), status=200)

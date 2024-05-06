@@ -32,7 +32,7 @@ def language_learning_agent_processing_loop():
             # Check for new transcripts
             #print("RUNNING LANGUAGE LEARNING LOOP")
             newTranscripts = db_handler.get_recent_transcripts_from_last_nseconds_for_all_users(
-                n=run_period*2)
+                n=run_period*5)
 
             words_to_show = None
             for transcript in newTranscripts:
@@ -45,10 +45,24 @@ def language_learning_agent_processing_loop():
                     continue
                 else:
                     print("User is not having a conversation, running language translation")
+
+                #check the translate mode
+                translate_mode = db_handler.get_user_settings_value(transcript['user_id'], "translate_mode")
+                # if true, we are in single shot mode, so only run if the "should_run_single_shot_translate" is true. Otherwise, run anyway
+                if translate_mode:
+                    #check if the user asked for a translate
+                    if not db_handler.get_user_settings_value(transcript['user_id'], "should_run_single_shot_translate"):
+                        continue
+                    db_handler.update_single_user_setting(transcript['user_id'], "should_run_single_shot_translate", False)
+
                 #get users target language
                 target_language = db_handler.get_user_settings_value(transcript['user_id'], "target_language")
                 #print("GOT TARGET LANGUAGE: " + target_language)
                 source_language = db_handler.get_user_settings_value(transcript['user_id'], "source_language")
+
+                #get the translation ratio
+                translation_ratio = db_handler.get_user_settings_value(transcript['user_id'], "translation_ratio")
+
                 #get the transcription language
                 #print(transcript)
                 transcribe_language = transcript["transcribe_language"]
@@ -63,7 +77,7 @@ def language_learning_agent_processing_loop():
                 #print(live_translate_word_history)
 
                 #run the language learning agent
-                words_to_show = run_language_learning_agent(transcript['text'], word_frequency_percentiles, target_language, transcribe_language, source_language, live_translate_word_history)
+                words_to_show = run_language_learning_agent(transcript['text'], word_frequency_percentiles, target_language, transcribe_language, source_language, live_translate_word_history, translation_ratio)
                 print("transcript is: ")
                 print(transcript)
 

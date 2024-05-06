@@ -23,7 +23,7 @@ from Modules.LangchainSetup import *
 language_learning_agent_prompt_blueprint = """
 You are an expert language teacher fluent in many languages. You are listening to a user's conversation right now. The user is learning {target_language}. The user's first language is {source_language}. You help the language learner user by translating some words from one language to another.
 
-You identify vocabulary from the conversation transcript (Input Text) that the user might not understand and then translate those words. You output 0 to 3 words. If the learner's fluency level is less than 50, they will need 1/5 words defined (one third of the words in the Input Text are defined or have already been defines). 50-75 fluency level might need 1 word per sentence. If fluency level is >75, only choose and translate very rare words.
+You identify vocabulary from the conversation transcript (Input Text) that the user might not understand and then translate those words. You output 0 to 3 words. If the learner's fluency level is less than 50, they will need 1/{translation_ratio} words defined (one third of the words in the Input Text are defined or have already been defines). 50-75 fluency level might need 1 word per sentence. If fluency level is >75, only choose and translate very rare words.
 
 Input Text Language: {transcribe_language}
 Output (translated) language: {output_language}
@@ -69,7 +69,9 @@ Output Format: {format_instructions}
 
 The Input Text is in {transcribe_language}, your output translation(s) should be in {output_language}.
 
-Don't redefine recently defined words! Don't include punctuation or periods (do not include ?.,;) in your output! Output all lowercase! Define 1/5 of the words in the input text (never define all of the words in the input, never define highly common words like "the", "a", "it", etc.). Output words in the order they appear in the input text. Now provide the output:"""
+{extra_instruct}
+
+Don't redefine recently defined words! Don't include punctuation or periods (do not include ?.,;) in your output! Output all lowercase! Define 1/{translation_ratio} of the words in the input text (never define all of the words in the input, never define highly common words like "the", "a", "it", etc.). Output words in the order they appear in the input text. Now provide the output:"""
 
 #opposite language (either {source_language} or {target_language}, whatever is
 
@@ -120,7 +122,7 @@ def format_list_data(data: dict) -> str:
 
 
 @time_function()
-def run_language_learning_agent(conversation_context: str, word_rank: dict, target_language="Russian", transcribe_language="English", source_language = "English", live_translate_word_history=""):
+def run_language_learning_agent(conversation_context: str, word_rank: dict, target_language="Russian", transcribe_language="English", source_language = "English", live_translate_word_history="", translation_ratio=5):
     # start up GPT3 connection
     llm = get_langchain_gpt35(temperature=0.2, max_tokens=512)
 
@@ -141,6 +143,12 @@ def run_language_learning_agent(conversation_context: str, word_rank: dict, targ
     print("output language")
     print(output_language)
 
+    extra_instruct = ""
+    if translation_ratio < 4:
+        extra_instruct = "Define most of the words in the input! Define and output definitions for multiple/many words!"
+    elif translation_ratio > 8:
+        extra_instruct = "Don't define very many words! Only rare words! It's ok to define only 1 words if all the words are too common!"
+
     class LanguageLearningAgentQuery(BaseModel):
         """
         Proactive language learning agent
@@ -153,7 +161,7 @@ def run_language_learning_agent(conversation_context: str, word_rank: dict, targ
 
     extract_language_learning_agent_query_prompt = PromptTemplate(
         template=language_learning_agent_prompt_blueprint,
-        input_variables=["conversation_context", "target_language", "transcribe_language", "output_language", "source_language", "fluency_level", "word_rank", "live_translate_word_history"],
+        input_variables=["conversation_context", "target_language", "transcribe_language", "output_language", "source_language", "fluency_level", "word_rank", "live_translate_word_history", "translation_ratio", "extra_instruct"],
         partial_variables={
             "format_instructions": language_learning_agent_query_parser.get_format_instructions()}
     )
@@ -170,7 +178,9 @@ def run_language_learning_agent(conversation_context: str, word_rank: dict, targ
         word_rank=word_rank_string,
         output_language=output_language,
         transcribe_language=transcribe_language,
-        live_translate_word_history=live_translate_word_history
+        live_translate_word_history=live_translate_word_history,
+        translation_ratio=translation_ratio,
+        extra_instruct=extra_instruct
     ).to_string()
 
     # print("LANGUAGE LEARNING PROMPT********************************")
